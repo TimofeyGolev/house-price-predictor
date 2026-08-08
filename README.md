@@ -1,102 +1,106 @@
-# House Price Predictor
+## House Price Predictor
+A machine learning project that predicts house prices based on property characteristics.
 
-A machine learning project that predicts house prices using property data.
 
-## About
+## Project Overview
+The model uses information about a house to predict its price.
 
-This project focuses on building a house price prediction model using machine learning.
+The current dataset contains 50,000 generated house records.
 
-The current version uses three main features:
+Features used by the model:
 
-- Area
-- Number of rooms
-- Floor
+State
+City
+Area (sqft)
+Bedrooms
+Bathrooms
+Year Built
+Garage
+Distance from city center
+Condition
 
-The model is trained on housing data and can predict prices for new properties.
+
+## Model
+The project uses a Random Forest Regressor.
+
+Categorical features are converted using OneHotEncoder, and the preprocessing and model are combined into a single scikit-learn Pipeline.
+
+
+## Current Results
+The current model achieves:
+
+MAE: ~$34,443
+R²: 0.9814
+The dataset contains random price variation of up to ±$50,000, so the model cannot perfectly predict every generated price.
+
+
+## Dataset
+The dataset is synthetically generated for this project.
+
+The price is generated from several factors, including:
+
+city
+area
+number of bedrooms and bathrooms
+year built
+garage
+condition
+distance from the city center
+Random variation is also added to make the prices less deterministic.
+
+This dataset is not intended to represent real-world housing market prices.
+
 
 ## Project Structure
-
 house-price-predictor/
-
+│
 ├── data/
-
-│ └── houses.csv
-
-├── src/
-
-│ ├── train.py
-
-│ └── predict.py
-
+│   └── houses.csv
+│
 ├── models/
-
+│   └── house_model.pkl
+│
 ├── generate_data.py
-
+├── train.py
 ├── requirements.txt
-
 ├── README.md
-
 └── .gitignore
 
 
-## Technologies
+## How to Run
+Create and activate a virtual environment:
 
-- Python
-- Pandas
-- Scikit-learn
-- Git
-- GitHub
+python -m venv .venv
+Activate it on Windows:
 
+.venv\Scripts\activate
+Install dependencies:
 
-## Workflow
+pip install -r requirements.txt
+Generate the dataset:
 
-1. Load housing data from a CSV file.
-2. Prepare features and target values.
-3. Split data into training and testing sets.
-4. Train a machine learning model.
-5. Evaluate model performance.
-6. Use the trained model to predict new house prices.
+python generate_data.py
+Train the model:
 
+python train.py
+The trained model will be saved to:
 
-## Evaluation
-
-The model is evaluated using:
-
-MAE (Mean Absolute Error)
-
-R² Score
+models/house_model.pkl
 
 
-## Current Progress
+## Future Development
+The current version is a baseline.
 
-Implemented:
+Future versions will focus on using real housing market data and expanding the project from simple price prediction to market analysis.
 
-Synthetic housing data generation
+Possible features include:
 
-Data preparation
+real property listings
+price per square foot
+neighborhood analysis
+comparable properties
+market trends
+rental price estimation
+identifying potentially overpriced or underpriced properties
 
-Model training
-
-Model evaluation
-
-Price prediction from user input
-
-
-## Next Steps
-
-Increase dataset size
-
-Add location-based features
-
-Improve model accuracy
-
-Analyze real estate market data
-
-Compare different machine learning algorithms
-
-Build a user interface
-
-
-## Author
-
-Timofey
+The long-term goal is to build a system that can analyze the housing market rather than only predict the price of an individual house.
