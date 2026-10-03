@@ -1,106 +1,179 @@
-## House Price Predictor
-A machine learning project that predicts house prices based on property characteristics.
+# House Price Predictor
 
+A machine learning project that predicts real estate market prices for a city, ZIP code, and year using real historical market data.
 
-## Project Overview
-The model uses information about a house to predict its price.
+## About the project
 
-The current dataset contains 50,000 generated house records.
+I built this project to learn how machine learning works in a real project — from working with real data to training and testing a model.
 
-Features used by the model:
+The dataset (HouseTS) was taken from the internet. It has real estate market data for about 30 US cities from 2012 to 2023. It includes city, ZIP code, year, and other information like population, income, schools, and more.
 
-State
-City
-Area (sqft)
-Bedrooms
-Bathrooms
-Year Built
-Garage
-Distance from city center
-Condition
+The goal is to predict an approximate market price using this data.
 
+## Important: What this model actually predicts
 
-## Model
-The project uses a Random Forest Regressor.
+This model does **not** predict the price of one specific house using features like square footage, bedrooms, or bathrooms. The dataset does not have this type of information.
 
-Categorical features are converted using OneHotEncoder, and the preprocessing and model are combined into a single scikit-learn Pipeline.
+Instead, each row is a market snapshot for one ZIP code in one month. Because of this, the model predicts a **market-level price** — an estimate of the general price level in a city or ZIP code at a certain time.
 
+## Tech stack
 
-## Current Results
-The current model achieves:
+* Python
+* pandas
+* scikit-learn
 
-MAE: ~$34,443
-R²: 0.9814
-The dataset contains random price variation of up to ±$50,000, so the model cannot perfectly predict every generated price.
+  * RandomForestRegressor
+  * Pipeline
+  * ColumnTransformer
+  * OneHotEncoder
+* joblib — to save and load the model
 
+## Project structure
 
-## Dataset
-The dataset is synthetically generated for this project.
-
-The price is generated from several factors, including:
-
-city
-area
-number of bedrooms and bathrooms
-year built
-garage
-condition
-distance from the city center
-Random variation is also added to make the prices less deterministic.
-
-This dataset is not intended to represent real-world housing market prices.
-
-
-## Project Structure
+```text
 house-price-predictor/
 │
 ├── data/
-│   └── houses.csv
+│   └── HouseTS.csv
+│
+├── src/
+│   ├── explore_housets.py   # data exploration (EDA)
+│   ├── train.py             # trains and saves the model
+│   └── predict.py           # makes predictions
 │
 ├── models/
-│   └── house_model.pkl
+│   ├── house_price_model.pkl
+│   └── top_zipcodes.pkl
 │
-├── generate_data.py
-├── train.py
-├── requirements.txt
-├── README.md
-└── .gitignore
+└── README.md
+```
 
+## How it works
 
-## How to Run
-Create and activate a virtual environment:
+### 1. Explore the data (`explore_housets.py`)
 
-python -m venv .venv
-Activate it on Windows:
+I checked the price distribution, correlations, and some other parts of the dataset. I also found some bad or suspicious rows.
 
-.venv\Scripts\activate
-Install dependencies:
+### 2. Train the model (`train.py`)
 
-pip install -r requirements.txt
-Generate the dataset:
+* Load 200,000 rows from the dataset using a random sample.
+* Split the data by time:
 
-python generate_data.py
-Train the model:
+  * **2012–2021** → training
+  * **2022–2023** → testing
+* I used a time-based split instead of a random split because this is time series data. The model should learn from the past and then predict the future.
+* Reduce the number of ZIP code categories (see the section below).
+* Train a Random Forest model inside a Pipeline.
+* Save the trained model and the ZIP code list.
 
-python train.py
-The trained model will be saved to:
+### 3. Make predictions (`predict.py`)
 
-models/house_model.pkl
+* Load the saved model.
+* Ask the user for a city, ZIP code, and year.
+* Find the latest known data for that city and ZIP code.
+* Use this data for the other features.
+* Predict the price and print the result.
+* The user can make another prediction or stop the program.
 
+## Results
 
-## Future Development
-The current version is a baseline.
+Final model: **200,000 rows, Random Forest with 100 trees**
 
-Future versions will focus on using real housing market data and expanding the project from simple price prediction to market analysis.
+| Metric |    Value |
+| ------ | -------: |
+| MAE    |  $62,169 |
+| RMSE   | $122,311 |
+| R²     |    0.918 |
 
-Possible features include:
+## The ZIP code problem
 
-real property listings
-price per square foot
-neighborhood analysis
-comparable properties
-market trends
-rental price estimation
-identifying potentially overpriced or underpriced properties
+This was the biggest problem I had in the project.
 
-The long-term goal is to build a system that can analyze the housing market rather than only predict the price of an individual house.
+The dataset has **6,226 unique ZIP codes**. When I used all of them with OneHotEncoder, the table became very large. My computer has 8GB of RAM, and it could not handle it. Training froze for hours. One time, I even left it overnight, but it still did not finish.
+
+### First fix
+
+I kept only the **500 most common ZIP codes** in the whole dataset. All other ZIP codes were grouped into one category called `"other"`.
+
+But then I found another problem.
+
+The top-500 list was not fair between cities. Some cities had many more rows in the dataset, so they took most of the 500 places.
+
+For example:
+
+* Boston: 211 ZIP codes
+* Atlanta: 203 ZIP codes
+* Los Angeles, San Francisco, and New York: only 1 ZIP code each
+
+This meant the model could not work well for many cities.
+
+### Real fix
+
+I changed the logic to select the **top 20 ZIP codes for each city separately**, instead of selecting the top 500 ZIP codes for the whole dataset.
+
+This gave every city a similar number of ZIP codes.
+
+It also improved the model:
+
+**R²: 0.898 → 0.918**
+
+This was the best result I got in the project.
+
+I also found another bug. `train.py` and `predict.py` were calculating the top ZIP codes in different ways. Because of this, a ZIP code that the model knew could sometimes appear as `"unknown"` in `predict.py`.
+
+I fixed this by saving the exact ZIP code list used during training in `top_zipcodes.pkl`. Now `predict.py` uses the same list.
+
+## Feature importance and a possible data leakage problem
+
+I checked which features were the most important for the model.
+
+**Median Home Value** had about **69% of the feature importance**. This was much higher than the other features.
+
+This made me think that maybe this feature is too close to the real target price. The model could be using this one number instead of really learning the relationship between the features and the price.
+
+I tested this by removing Median Home Value and training the model again.
+
+The result was interesting: another feature, **median_list_ppsf**, became the most important feature with about **70% importance**.
+
+R² only dropped a little:
+
+**0.918 → 0.881**
+
+This makes me think that the dataset has several features that are already closely related to the target price.
+
+This is a limitation of the dataset that I want to understand better in the future.
+
+## Error analysis
+
+The biggest prediction errors happen in **San Francisco, New York, and Miami**.
+
+These cities have very different prices in different areas of the same city. There can be very expensive areas next to much cheaper areas, so the model has a harder time making accurate predictions.
+
+Most of the biggest errors also happened on ZIP codes marked as `"other"`.
+
+This is another sign that the ZIP code grouping is one of the main sources of error.
+
+## Known limitations
+
+* The model predicts a market-level price, not the price of one specific house.
+* ZIP codes outside each city's top 20 are grouped into `"other"`.
+* Some features may be too closely related to the target price. I have not fully solved this yet.
+* Predictions for years outside 2012–2023 are less reliable because the model has not seen this data.
+* The model is less accurate for very expensive and rare properties because there are not many examples of them in the dataset.
+
+## Next steps
+
+* Try target encoding for ZIP codes. Instead of treating ZIP codes as categories, I could use a number such as the average historical price. This could help with rare ZIP codes without creating too many categories.
+* Keep improving the model based on error analysis.
+* Investigate the possible data leakage problem more deeply.
+
+## How to run
+
+```bash
+# Train the model
+python src/train.py
+
+# Make predictions
+python src/predict.py
+```
+
