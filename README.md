@@ -10,6 +10,24 @@ The dataset (HouseTS) was taken from the internet. It has real estate market dat
 
 The goal is to predict an approximate market price using this data.
 
+## Dataset
+
+The dataset was downloaded from Kaggle:
+
+**Source:** [HouseTS Dataset on Kaggle](https://www.kaggle.com/datasets/shengkunwang/housets-dataset)
+
+The original CSV file is about **271 MB**, so it is not included in this repository because GitHub has a **100 MB file size limit**.
+
+The dataset is stored locally in:
+
+```text
+data/HouseTS.csv
+```
+
+The file is added to `.gitignore` so Git does not track it.
+
+To run the project locally, download the dataset from the source above and put `HouseTS.csv` inside the `data/` directory.
+
 ## Important: What this model actually predicts
 
 This model does **not** predict the price of one specific house using features like square footage, bedrooms, or bathrooms. The dataset does not have this type of information.
@@ -168,6 +186,8 @@ This is another sign that the ZIP code grouping is one of the main sources of er
 * Investigate the possible data leakage problem more deeply.
 
 ## How to run
+
+First, download the **HouseTS dataset** from the Kaggle source above and put `HouseTS.csv` inside the `data/` directory.
 
 ```bash
 # Train the model
